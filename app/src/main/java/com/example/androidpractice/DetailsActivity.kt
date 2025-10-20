@@ -30,10 +30,9 @@ class DetailsActivity : ComponentActivity() {
                 val person = Person(intent.getStringExtra("PERSON_FIRSTNAME").toString(),
                     intent.getStringExtra("PERSON_LASTNAME").toString(),
                     intent.getStringExtra("PERSON_BIO").toString(),
-                    intent.getStringExtra("PERSON_SEX").toString(),
                     intent.getStringExtra("PERSON_GENDER").toString(),
-                    intent.getStringExtra("PERSON_JOBTITLE").toString(),
-                    intent.getStringExtra("PERSON_PERSONPORTRAITPATH").toString())
+                    Company("", intent.getStringExtra("PERSON_JOBTITLE").toString()),
+                    intent.getStringExtra("PERSON_IMAGE_URL").toString())
 
                 DetailsActivityScreen(person, onBackClick = {finish()})
             }

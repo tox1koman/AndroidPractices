@@ -1,6 +1,5 @@
 package com.example.androidpractice
 
-import android.graphics.BitmapFactory
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -38,13 +37,16 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.Color.Companion.Cyan
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.androidpractice.ui.theme.AndroidPracticeTheme
+import coil.compose.rememberAsyncImagePainter
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,6 +63,15 @@ fun DetailsActivityScreen(
     val imageScale = remember { Animatable(0f) }
     // Animation for content opacity
     val contentOpacity = remember { Animatable(0f) }
+
+    val lightBlue = Color(0xFF0066FF)
+    val purple = Color(0xFF800080)
+
+    val rainbowColors = listOf(
+        Cyan,
+        lightBlue,
+        purple,
+    )
 
     LaunchedEffect(Unit) {
         imageScale.animateTo(
@@ -140,21 +151,15 @@ fun DetailsActivityScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Portrait
-                    val img = BitmapFactory.decodeStream(assetMan.open(person.personPortraitPath))
-
-                    if (img != null) {
-                        Image(
-                            bitmap = img.asImageBitmap(),
-                            contentDescription = "Portrait of ${person.firstName} ${person.lastName}",
-                            modifier = Modifier
-                                .size(180.dp)
-                                .clip(CircleShape)
-                                .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                .shadow(4.dp, CircleShape)
-                                .background(MaterialTheme.colorScheme.background)
-                                .scale(imageScale.value)
-                        )
-                    }
+                    Image(painter = rememberAsyncImagePainter(person.image),
+                        contentDescription = "Portrait of ${person.firstName} ${person.lastName}",
+                        modifier = Modifier
+                            .size(180.dp)
+                            .clip(CircleShape)
+                            .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                            .shadow(4.dp, CircleShape)
+                            .background(MaterialTheme.colorScheme.background)
+                            .scale(imageScale.value))
 
                     // Full Name
                     Text(
@@ -169,7 +174,7 @@ fun DetailsActivityScreen(
 
                     // Job Title
                     Text(
-                        text = person.jobTitle,
+                        text = person.company?.title.toString(),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 20.sp
@@ -186,7 +191,24 @@ fun DetailsActivityScreen(
 
                     // Bio
                     Text(
-                        text = "Биография: ${person.bio}",
+                        text = buildAnnotatedString {
+                            withStyle(
+                                style = SpanStyle(fontWeight = FontWeight.Bold)
+                            ){
+                                append("Любимая цитата: ")
+                            }
+                            withStyle(
+                                SpanStyle(
+                                    brush = Brush.linearGradient(colors = rainbowColors),
+                                    fontStyle = FontStyle.Italic
+                                )
+                            ){
+                                append("\"")
+                                append(person.bio)
+                                append("\"")
+                            }
+
+                        },
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontSize = 16.sp,
                             lineHeight = 24.sp
@@ -197,19 +219,18 @@ fun DetailsActivityScreen(
                             .padding(top = 8.dp)
                     )
 
-                    // Sex
-                    Text(
-                        text = "Пол: ${person.sex}",
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontSize = 16.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.alpha(contentOpacity.value)
-                    )
-
                     // Gender
                     Text(
-                        text = "Гендер: ${person.gender}",
+                        text = buildAnnotatedString {
+                            withStyle(
+                                style = SpanStyle(fontWeight = FontWeight.Bold)
+                            ){
+                                append("Пол: ")
+                            }
+                            append(person.gender)
+
+
+                        } ,
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontSize = 16.sp
                         ),

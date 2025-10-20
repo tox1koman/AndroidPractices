@@ -1,107 +1,107 @@
+// ui/ScreenList.kt
 package com.example.androidpractice
 
 import android.content.Intent
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.json.*
-import java.io.File
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
 
-@Serializable
-data class Person(
-    val firstName: String,
-    val lastName: String,
-    val bio: String,
-    val sex: String,
-    val gender: String,
-    val jobTitle: String,
-    val personPortraitPath: String
-)
 @Composable
-fun ScreenList(){
-    val paulson = Person("Роберт",
-        "Полсон",
-        "Роберт Полсон, он же Боб, он же \"чувак с легендарными... гм, обнимашками\" — это не просто участник Бойцовского клуба, а настоящий герой андеграунда, который доказал, что даже с \"чемоданами\" на груди можно быть звездой! Этот здоровяк с сердцем размером с его бицепсы (а они немаленькие) превращает каждый бой в эпичное шоу: \"Сдавайтесь, или я задушу вас своей харизмой!\"",
-        "Мужчина",
-        "Гетеро",
-        "Боец",
-        "robert.png"
-    )
-
-    val pechkin = Person(
-        "Игорь",
-        lastName = "Печкин",
-        bio = """
-                Печкин предпенсионного возраста. 
-                Ему 64 года. 
-                Он довольно вредный, любопытный, трусливый и занудный, а также склонен к формализму: соблюдает все инструкции, не делая никому исключений. 
-                Ещё он часто без спроса заходит в гости к Дяде Фёдору в дом. 
-                Очень любит свою работу на почте. 
-            """.trimIndent(),
-        sex = "Мужской",
-        gender = "Гетеро",
-        jobTitle = "Почтальон",
-        personPortraitPath = "pechkin.png"
-    )
-
-    val persons = mutableListOf(paulson, pechkin)
-    for (i in 1..5) {
-        persons.add(paulson)
-        persons.add(pechkin)
-    }
-
-
-
-    LazyColumn (modifier = Modifier.fillMaxSize()) {
-        items(persons) { person ->
-            Row(modifier = Modifier.fillMaxWidth().padding(5.dp).height(80.dp),
-                verticalAlignment = Alignment.CenterVertically){
-
-                val context = LocalContext.current
-                val intent = Intent(context, DetailsActivity::class.java)
-
-                intent.putExtra("PERSON_FIRSTNAME", person.firstName)
-                intent.putExtra("PERSON_LASTNAME", person.lastName)
-                intent.putExtra("PERSON_BIO", person.bio)
-                intent.putExtra("PERSON_SEX", person.sex)
-                intent.putExtra("PERSON_GENDER", person.gender)
-                intent.putExtra("PERSON_JOBTITLE", person.jobTitle)
-                intent.putExtra("PERSON_PERSONPORTRAITPATH", person.personPortraitPath)
-
-                Button(onClick = {
-                    context.startActivity(intent)
-                }, modifier = Modifier.fillMaxWidth()) {
-                    val assetMan = context.assets
-                    val img = BitmapFactory.decodeStream(assetMan.open(person.personPortraitPath))
-                    if (img != null) {
-                        Image(
-                            bitmap = img.asImageBitmap(),
-                            modifier = Modifier.padding(end = 10.dp).width(50.dp),
-                            contentDescription = "Person Image",
-                        )
-                    }
-                Text(text = "${person.firstName} ${person.lastName}")
+fun ScreenList(
+    viewModel: PersonViewModel = viewModel(
+        factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return PersonViewModel(AppModule.getPersonsUseCase) as T
             }
+        }
+    )
+) {
+    val uiState = viewModel.uiState.collectAsState().value
+    val context = LocalContext.current
+
+    when (uiState) {
+        is UiState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        is UiState.Error -> {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = uiState.message, color = MaterialTheme.colorScheme.error)
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { viewModel.retry() }) {
+                    Text("Повторить")
+                }
+            }
+        }
+        is UiState.Success -> {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(uiState.persons) { person ->
+                        Button(
+                            onClick = {
+                                val intent = Intent(context, DetailsActivity::class.java).apply {
+                                    putExtra("PERSON_FIRSTNAME", person.firstName)
+                                    putExtra("PERSON_LASTNAME", person.lastName)
+                                    putExtra("PERSON_BIO", person.bio ?: "Нет биографии")
+                                    putExtra("PERSON_GENDER",if (person.gender == "male") "Мужской" else "Женский")
+                                    putExtra("PERSON_JOBTITLE", person.company?.title)
+                                    putExtra("PERSON_IMAGE_URL", person.image)
+                                }
+                                context.startActivity(intent)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White,
+                                contentColor = Color.DarkGray
+                            ),
+                             shape = RectangleShape
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp)
+                                    .height(80.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Image(
+                                    painter = rememberAsyncImagePainter(
+                                        model = person.image,
+                                        placeholder = androidx.compose.ui.res.painterResource(
+                                            id = android.R.drawable.ic_menu_gallery
+                                        )
+                                    ),
+                                    contentDescription = "Portrait",
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .padding(end = 12.dp)
+                                )
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = "${person.firstName} ${person.lastName}", style = MaterialTheme.typography.titleMedium)
+                                    Text(text = person.company?.title ?: "Нет должности", style = MaterialTheme.typography.bodySmall)
+                                }
+                        }
+                    }
+                    HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+                }
             }
         }
     }
