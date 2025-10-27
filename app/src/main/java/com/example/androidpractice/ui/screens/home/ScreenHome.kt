@@ -1,4 +1,4 @@
-package com.example.androidpractice
+package com.example.androidpractice.ui.screens.home
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 
 @Composable
 fun ScreenHome(){
-    Column (modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.Companion.fillMaxSize()) {
         Text(text = "Домашняя страница.")
     }
 }

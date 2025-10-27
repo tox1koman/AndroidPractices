@@ -1,9 +1,10 @@
-package com.example.androidpractice
+package com.example.androidpractice.domain.model
 
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Person(
+    val id: Int,
     val firstName: String,
     val lastName: String,
     val bio: String? = "Нет биографии",

@@ -1,5 +1,6 @@
-package com.example.androidpractice
+package com.example.androidpractice.data.remote
 
+import com.example.androidpractice.domain.model.PersonsResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 

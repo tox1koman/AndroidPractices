@@ -1,11 +1,11 @@
-package com.example.androidpractice
+package com.example.androidpractice.ui.viewmodel
 
-
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.androidpractice.Person
-import com.example.androidpractice.GetPersonsUseCase
+import com.example.androidpractice.domain.usecase.GetPersonsUseCase
+import com.example.androidpractice.domain.model.Person
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,11 +21,17 @@ sealed class UiState {
 }
 
 class PersonViewModel(
-    private val getPersonsUseCase: GetPersonsUseCase
+    private val getPersonsUseCase: GetPersonsUseCase,
+    context: Context
 ) : ViewModel() {
 
+    private val prefs = context.getSharedPreferences("filter_prefs", Context.MODE_PRIVATE)
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
+    private var showMale = prefs.getBoolean("showMale", true)
+    private var showFemale = prefs.getBoolean("showFemale", true)
+    private var jobFilter: String? = prefs.getString("professionFilter", null)
 
     init {
         loadPersons()
@@ -36,7 +42,8 @@ class PersonViewModel(
             _uiState.value = UiState.Loading
             try {
                 val persons = getPersonsUseCase(limit = 12)
-                _uiState.value = UiState.Success(persons)
+                val filtered = applyFilters(persons)
+                _uiState.value = UiState.Success(filtered)
             } catch (e: IOException) {
                 _uiState.value = UiState.Error("Нет интернета или сервер недоступен")
             } catch (e: HttpException) {
@@ -48,7 +55,28 @@ class PersonViewModel(
         }
     }
 
+    private fun applyFilters(persons: List<Person>): List<Person> {
+        return persons.filter { person ->
+            val genderOk = (person.gender == "male" && showMale) || (person.gender == "female" && showFemale)
+            val jobOk = jobFilter?.let { filter ->
+                person.company?.title?.contains(filter, ignoreCase = true) ?: false
+            } ?: true
+            genderOk && jobOk
+        }
+    }
+
     fun retry() {
+        loadPersons()
+    }
+
+    fun setJobFilter(job: String?) {
+        jobFilter = job
+        loadPersons()
+    }
+
+    fun setGenderFilter(male: Boolean, female: Boolean) {
+        showMale = male
+        showFemale = female
         loadPersons()
     }
 }

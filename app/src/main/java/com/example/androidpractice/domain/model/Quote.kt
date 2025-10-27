@@ -1,4 +1,4 @@
-package com.example.androidpractice
+package com.example.androidpractice.domain.model
 
 import kotlinx.serialization.Serializable
 

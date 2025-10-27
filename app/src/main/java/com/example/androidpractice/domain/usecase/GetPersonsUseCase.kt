@@ -1,7 +1,7 @@
-package com.example.androidpractice
+package com.example.androidpractice.domain.usecase
 
-import com.example.androidpractice.Person
-import com.example.androidpractice.PersonRepository
+import com.example.androidpractice.data.repository.PersonRepository
+import com.example.androidpractice.domain.model.Person
 
 class GetPersonsUseCase(
     private val repository: PersonRepository

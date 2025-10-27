@@ -1,7 +1,5 @@
-package com.example.androidpractice
+package com.example.androidpractice.ui
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,13 +16,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.androidpractice.navigation.BottomBar
+import com.example.androidpractice.navigation.NavigationGraph
 import com.example.androidpractice.ui.theme.AndroidPracticeTheme
-
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -34,19 +31,20 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AndroidPracticeTheme {
-                val navController : NavHostController = rememberNavController()
+                val navController: NavHostController = rememberNavController()
 
                 Scaffold(
-                    bottomBar = {BottomBar(navController, modifier = Modifier)},
-                    topBar = {TopAppBar(title = {
-                        val navBackStackEntry by navController.currentBackStackEntryAsState()
-                        val currentDestination = navBackStackEntry?.destination?.route
-                        Text(routeTranslation(currentDestination.toString()).toString())
-                    }, modifier = Modifier.background(Color(0xff499bd1)))}
+                    bottomBar = { BottomBar(navController, modifier = Modifier.Companion) },
+                    topBar = {
+                        TopAppBar(title = {
+                            val navBackStackEntry by navController.currentBackStackEntryAsState()
+                            val currentDestination = navBackStackEntry?.destination?.route
+                            Text(routeTranslation(currentDestination.toString()).toString())
+                        }, modifier = Modifier.Companion.background(Color(0xff499bd1)))
+                    }
                 )
-                {
-                    paddingValues ->
-                    Box(modifier = Modifier.padding(paddingValues)){
+                { paddingValues ->
+                    Box(modifier = Modifier.Companion.padding(paddingValues)) {
                         NavigationGraph(navController)
                     }
                 }
@@ -58,7 +56,7 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
+fun Greeting(name: String, modifier: Modifier = Modifier.Companion) {
     Text(
         text = "Hello $name!",
         modifier = modifier
@@ -78,6 +76,8 @@ fun routeTranslation(route: String) : String{
     when(route){
         "home" -> return "Домашняя страница"
         "list" -> return "Список"
+        "filter" -> return "Фильтр"
+        "favorites" -> return "Избранное"
     }
     return "Unknown"
 }

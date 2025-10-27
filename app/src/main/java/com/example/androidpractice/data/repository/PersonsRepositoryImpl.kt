@@ -1,6 +1,8 @@
-package com.example.androidpractice
+package com.example.androidpractice.data.repository
 
-import android.util.Log
+import com.example.androidpractice.data.remote.PersonApi
+import com.example.androidpractice.data.remote.QuoteApi
+import com.example.androidpractice.domain.model.Person
 
 class PersonRepositoryImpl(
     private val personApi: PersonApi,
