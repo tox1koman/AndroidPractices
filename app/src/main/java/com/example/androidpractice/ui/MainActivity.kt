@@ -73,11 +73,14 @@ fun GreetingPreview() {
 
 
 fun routeTranslation(route: String) : String{
-    when(route){
+    when(route.split("/")[0]){
         "home" -> return "Домашняя страница"
         "list" -> return "Список"
         "filter" -> return "Фильтр"
         "favorites" -> return "Избранное"
+        "profile" -> return "Профиль"
+        "edit_profile" -> return "Редактировать"
+        "details" -> return "Карточка"
     }
     return "Unknown"
 }

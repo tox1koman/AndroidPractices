@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.androidpractice"
-        minSdk = 33
+        minSdk = 30
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -55,7 +55,9 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("androidx.room:room-runtime:2.7.1")
     implementation("androidx.room:room-ktx:2.7.1")
+    implementation(libs.androidx.ui)
     kapt("androidx.room:room-compiler:2.7.1")
+    implementation("androidx.datastore:datastore-preferences:1.1.0")
 
 //    implementation("com.google.devtools.ksp:2.2.10")
     // Jetpack Compose integration
