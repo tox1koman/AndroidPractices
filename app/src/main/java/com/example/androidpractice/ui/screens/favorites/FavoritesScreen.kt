@@ -29,15 +29,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.androidpractice.data.local.FavoriteDao
 import com.example.androidpractice.data.local.FavoritePerson
-import com.example.androidpractice.ui.screens.details.DetailsActivity
 import com.example.androidpractice.ui.viewmodel.FavoriteViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FavoriteScreen(dao: FavoriteDao, onBack: () -> Unit = {}) {
+fun FavoriteScreen(dao: FavoriteDao, onBack: () -> Unit = {}, navController: NavController) {
     val favoriteViewModel: FavoriteViewModel = viewModel()
     favoriteViewModel.loadFavorites(dao)
 
@@ -71,22 +71,7 @@ fun FavoriteScreen(dao: FavoriteDao, onBack: () -> Unit = {}) {
                             modifier = Modifier.Companion
                                 .fillMaxWidth()
                                 .clickable {
-                                    val intent =
-                                        Intent(context, DetailsActivity::class.java).apply {
-                                            putExtra("PERSON_FIRSTNAME", person.firstName)
-                                            putExtra("PERSON_LASTNAME", person.lastName)
-                                            putExtra("PERSON_BIO", person.bio ?: "Нет биографии")
-                                            putExtra(
-                                                "PERSON_GENDER",
-                                                if (person.gender == "male") "Мужской" else "Женский"
-                                            )
-                                            putExtra(
-                                                "PERSON_JOBTITLE",
-                                                person.jobTitle ?: "Нет должности"
-                                            )
-                                            putExtra("PERSON_IMAGE_URL", person.imageUrl)
-                                        }
-                                    context.startActivity(intent)
+                                    navController.navigate("details/${person.id}")
                                 }
                                 .padding(8.dp),
                             verticalAlignment = Alignment.Companion.CenterVertically

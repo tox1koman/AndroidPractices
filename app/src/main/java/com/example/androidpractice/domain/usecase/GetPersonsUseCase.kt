@@ -9,4 +9,6 @@ class GetPersonsUseCase(
     suspend operator fun invoke(limit: Int): List<Person> {
         return repository.getPersons(limit)
     }
+
+    suspend fun getPersonById(id: Int): Person = repository.getPersonById(id)
 }

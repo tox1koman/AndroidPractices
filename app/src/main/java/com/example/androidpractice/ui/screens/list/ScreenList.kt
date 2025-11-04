@@ -46,13 +46,13 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.navOptions
 import coil.compose.rememberAsyncImagePainter
 import com.example.androidpractice.data.FilterBadgeCache
 import com.example.androidpractice.data.local.AppDatabase
 import com.example.androidpractice.data.local.FavoritePerson
 import com.example.androidpractice.data.repository.FavoriteRepository
 import com.example.androidpractice.di.AppModule
-import com.example.androidpractice.ui.screens.details.DetailsActivity
 import com.example.androidpractice.ui.viewmodel.PersonViewModel
 import com.example.androidpractice.ui.viewmodel.UiState
 import kotlinx.coroutines.launch
@@ -133,7 +133,7 @@ fun ScreenList(
                                 firstName = person.firstName,
                                 lastName = person.lastName,
                                 gender = person.gender,
-                                jobTitle = person.company?.title,
+                                jobTitle = person.company.title,
                                 imageUrl = person.image,
                                 bio = person.bio
                             )
@@ -144,26 +144,7 @@ fun ScreenList(
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
                                     .combinedClickable(
                                         onClick = {
-                                            val intent =
-                                                Intent(context, DetailsActivity::class.java).apply {
-                                                    putExtra("PERSON_ID", person.id)
-                                                    putExtra("PERSON_FIRSTNAME", person.firstName)
-                                                    putExtra("PERSON_LASTNAME", person.lastName)
-                                                    putExtra(
-                                                        "PERSON_BIO",
-                                                        person.bio ?: "Нет биографии"
-                                                    )
-                                                    putExtra(
-                                                        "PERSON_GENDER",
-                                                        if (person.gender == "male") "Мужской" else "Женский"
-                                                    )
-                                                    putExtra(
-                                                        "PERSON_JOBTITLE",
-                                                        person.company?.title
-                                                    )
-                                                    putExtra("PERSON_IMAGE_URL", person.image)
-                                                }
-                                            context.startActivity(intent)
+                                            navController.navigate("details/${person.id}")
                                         },
                                         onLongClick = {
                                             scope.launch {
