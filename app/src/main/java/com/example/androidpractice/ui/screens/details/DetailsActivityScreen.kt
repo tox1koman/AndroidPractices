@@ -1,6 +1,5 @@
-package com.example.androidpractice
+package com.example.androidpractice.ui.screens.details
 
-import android.graphics.BitmapFactory
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -38,29 +37,40 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.androidpractice.ui.theme.AndroidPracticeTheme
+import coil.compose.rememberAsyncImagePainter
+import com.example.androidpractice.domain.model.Person
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsActivityScreen(
     person: Person,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.Companion,
     onBackClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val assetMan = context.assets
 
-    // Animation for image scale
+
     val imageScale = remember { Animatable(0f) }
-    // Animation for content opacity
     val contentOpacity = remember { Animatable(0f) }
+
+    val lightBlue = Color(0xFF0066FF)
+    val purple = Color(0xFF800080)
+
+    val rainbowColors = listOf(
+        Color.Companion.Cyan,
+        lightBlue,
+        purple,
+    )
 
     LaunchedEffect(Unit) {
         imageScale.animateTo(
@@ -82,13 +92,13 @@ fun DetailsActivityScreen(
                     Text(
                         "Карточка",
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Companion.Bold
                     )
                 },
                 navigationIcon = {
                     FloatingActionButton(
                         onClick = onBackClick,
-                        modifier = Modifier
+                        modifier = Modifier.Companion
                             .padding(8.dp)
                             .size(40.dp),
                         shape = CircleShape,
@@ -102,17 +112,17 @@ fun DetailsActivityScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
+                    containerColor = Color.Companion.Transparent
                 )
             )
         },
-        containerColor = Color.Transparent
+        containerColor = Color.Companion.Transparent
     ) { paddingValues ->
         Box(
-            modifier = Modifier
+            modifier = Modifier.Companion
                 .fillMaxSize()
                 .background(
-                    Brush.verticalGradient(
+                    Brush.Companion.verticalGradient(
                         colors = listOf(
                             MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                             MaterialTheme.colorScheme.background
@@ -121,121 +131,115 @@ fun DetailsActivityScreen(
                 )
         ) {
             Card(
-                modifier = Modifier
+                modifier = Modifier.Companion
                     .fillMaxWidth()
                     .padding(paddingValues)
                     .padding(horizontal = 16.dp, vertical = 24.dp)
                     .shadow(8.dp, RoundedCornerShape(16.dp)),
-                shape = RoundedCornerShape(16.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(
-                    modifier = Modifier
+                    modifier = Modifier.Companion
                         .fillMaxWidth()
                         .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    horizontalAlignment = Alignment.Companion.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Portrait
-                    val img = BitmapFactory.decodeStream(assetMan.open(person.personPortraitPath))
-
-                    if (img != null) {
-                        Image(
-                            bitmap = img.asImageBitmap(),
-                            contentDescription = "Portrait of ${person.firstName} ${person.lastName}",
-                            modifier = Modifier
-                                .size(180.dp)
-                                .clip(CircleShape)
-                                .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                .shadow(4.dp, CircleShape)
-                                .background(MaterialTheme.colorScheme.background)
-                                .scale(imageScale.value)
-                        )
-                    }
+                    Image(
+                        painter = rememberAsyncImagePainter(person.image),
+                        contentDescription = "Portrait of ${person.firstName} ${person.lastName}",
+                        modifier = Modifier.Companion
+                            .size(180.dp)
+                            .clip(CircleShape)
+                            .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                            .shadow(4.dp, CircleShape)
+                            .background(MaterialTheme.colorScheme.background)
+                            .scale(imageScale.value)
+                    )
 
                     // Full Name
                     Text(
                         text = "${person.firstName} ${person.lastName}",
                         style = MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.Companion.ExtraBold,
                             fontSize = 28.sp
                         ),
                         color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.alpha(contentOpacity.value)
+                        modifier = Modifier.Companion.alpha(contentOpacity.value)
                     )
 
                     // Job Title
                     Text(
-                        text = person.jobTitle,
+                        text = person.company?.title.toString(),
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Companion.SemiBold,
                             fontSize = 20.sp
                         ),
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
+                        modifier = Modifier.Companion
                             .alpha(contentOpacity.value)
                             .background(
                                 MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                RoundedCornerShape(8.dp)
+                                androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
                             )
                             .padding(horizontal = 12.dp, vertical = 4.dp)
                     )
 
                     // Bio
                     Text(
-                        text = "Биография: ${person.bio}",
+                        text = buildAnnotatedString {
+                            withStyle(
+                                style = SpanStyle(fontWeight = FontWeight.Companion.Bold)
+                            ) {
+                                append("Любимая цитата: ")
+                            }
+                            withStyle(
+                                SpanStyle(
+                                    brush = Brush.Companion.linearGradient(colors = rainbowColors),
+                                    fontStyle = FontStyle.Companion.Italic
+                                )
+                            ) {
+                                append("\"")
+                                append(person.bio)
+                                append("\"")
+                            }
+
+                        },
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontSize = 16.sp,
                             lineHeight = 24.sp
                         ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
+                        modifier = Modifier.Companion
                             .alpha(contentOpacity.value)
                             .padding(top = 8.dp)
                     )
 
-                    // Sex
-                    Text(
-                        text = "Пол: ${person.sex}",
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontSize = 16.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.alpha(contentOpacity.value)
-                    )
-
                     // Gender
                     Text(
-                        text = "Гендер: ${person.gender}",
+                        text = buildAnnotatedString {
+                            withStyle(
+                                style = SpanStyle(fontWeight = FontWeight.Companion.Bold)
+                            ) {
+                                append("Пол: ")
+                            }
+                            append(person.gender)
+
+
+                        },
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontSize = 16.sp
                         ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.alpha(contentOpacity.value)
+                        modifier = Modifier.Companion.alpha(contentOpacity.value)
                     )
                 }
             }
         }
     }
 }
-
-//@Preview(showBackground = true)
-//@Composable
-//fun DetailsActivityScreenPreview() {
-//    AndroidPracticeTheme {
-//        DetailsActivityScreen(
-//            person = Person(
-//                firstName = "Иван",
-//                lastName = "Иванов",
-//                jobTitle = "Разработчик",
-//                bio = "Опытный разработчик Android-приложений",
-//                sex = "Мужской",
-//                gender = "Мужской",
-//                personPortraitPath = "sample.jpg"
-//            )
-//        )
-//    }
-//}

@@ -1,4 +1,4 @@
-package com.example.androidpractice
+package com.example.androidpractice.navigation
 
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -16,7 +16,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 @Composable
 fun BottomBar(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier.Companion
 ) {
     val screens = listOf(
         BottomNavigationItems.ScreenHome,
@@ -25,7 +25,7 @@ fun BottomBar(
 
     NavigationBar(
         modifier = modifier,
-        containerColor = Color(red=73, green = 155, blue = 209),
+        containerColor = Color(red = 73, green = 155, blue = 209),
     ) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
@@ -49,11 +49,11 @@ fun BottomBar(
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    unselectedTextColor = Color(red=200, green = 200, blue = 200),
-                    selectedTextColor = Color.White,
-                    selectedIconColor = Color.Black,
-                    unselectedIconColor = Color(red=200, green = 200, blue = 200),
-                    indicatorColor = Color.White
+                    unselectedTextColor = Color(red = 200, green = 200, blue = 200),
+                    selectedTextColor = Color.Companion.White,
+                    selectedIconColor = Color.Companion.Black,
+                    unselectedIconColor = Color(red = 200, green = 200, blue = 200),
+                    indicatorColor = Color.Companion.White
                 ),
             )
         }
