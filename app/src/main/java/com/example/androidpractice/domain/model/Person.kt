@@ -7,9 +7,9 @@ data class Person(
     val id: Int,
     val firstName: String,
     val lastName: String,
-    val bio: String? = "Нет биографии",
+    val bio: String = "Нет биографии",
     val gender: String,
-    val company: Company? = Company("None", "Unknown"),
+    val company: Company = Company("None", "Unknown"),
     val image: String
 )
 

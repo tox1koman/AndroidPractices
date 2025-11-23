@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidpractice.domain.usecase.GetPersonsUseCase
 import com.example.androidpractice.domain.model.Person
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +30,18 @@ class PersonViewModel(
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
+    private fun handleError(e: Throwable): UiState.Error {
+        return when (e) {
+            is IOException -> UiState.Error("Нет интернета или сервер недоступен")
+            is HttpException -> UiState.Error("Ошибка сервера: ${e.code()}")
+            else -> UiState.Error("Неизвестная ошибка")
+        }
+    }
+
+    private val exceptionHandler = CoroutineExceptionHandler { _, e ->
+        _uiState.value = handleError(e)
+    }
+
     private var showMale = prefs.getBoolean("showMale", true)
     private var showFemale = prefs.getBoolean("showFemale", true)
     private var jobFilter: String? = prefs.getString("professionFilter", null)
@@ -40,17 +53,23 @@ class PersonViewModel(
     private fun loadPersons() {
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = UiState.Loading
-            try {
                 val persons = getPersonsUseCase(limit = 12)
                 val filtered = applyFilters(persons)
                 _uiState.value = UiState.Success(filtered)
-            } catch (e: IOException) {
-                _uiState.value = UiState.Error("Нет интернета или сервер недоступен")
-            } catch (e: HttpException) {
-                _uiState.value = UiState.Error("Ошибка сервера: ${e.code()}")
+        }
+    }
+
+    private val _selectedPerson = MutableStateFlow<UiState>(UiState.Loading)
+    val selectedPerson: StateFlow<UiState> = _selectedPerson
+
+    fun loadPersonById(id: Int) {
+        viewModelScope.launch {
+            _selectedPerson.value = UiState.Loading
+            try {
+                val person = getPersonsUseCase.getPersonById(id)
+                _selectedPerson.value = UiState.Success(listOf(person))
             } catch (e: Exception) {
-                Log.d("ERR", e.stackTrace.toList().toString())
-                _uiState.value = UiState.Error("Неизвестная ошибка: ${e.message}")
+                _selectedPerson.value = UiState.Error(e.message ?: "Не удалось загрузить")
             }
         }
     }
