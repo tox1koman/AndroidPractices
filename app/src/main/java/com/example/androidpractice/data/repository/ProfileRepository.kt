@@ -16,13 +16,15 @@ class ProfileRepository(private val context: Context) {
     private val jobKey = stringPreferencesKey("job")
     private val avatarKey = stringPreferencesKey("avatar")
     private val resumeKey = stringPreferencesKey("resume")
+    private val favoritePairTime = stringPreferencesKey("favoritePairTime")
 
     val profile: Flow<ProfileData> = context.profileDataStore.data.map { prefs ->
         ProfileData(
             fullName = prefs[nameKey] ?: "",
             jobTitle = prefs[jobKey] ?: "",
             avatarUri = prefs[avatarKey] ?: "",
-            resumeUri = prefs[resumeKey] ?: ""
+            resumeUri = prefs[resumeKey] ?: "",
+            favoritePairTime = prefs[favoritePairTime] ?: ""
         )
     }
 
@@ -32,6 +34,7 @@ class ProfileRepository(private val context: Context) {
             prefs[jobKey] = profile.jobTitle
             prefs[avatarKey] = profile.avatarUri
             prefs[resumeKey] = profile.resumeUri
+            prefs[favoritePairTime] = profile.favoritePairTime
         }
     }
 }

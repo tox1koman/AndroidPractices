@@ -1,12 +1,20 @@
 package com.example.androidpractice.ui.screens.profile
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.app.AlarmManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,7 +46,11 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import androidx.core.net.toUri
+import com.example.androidpractice.receiver.NotificationReceiver
+import java.util.Calendar
 
+@RequiresApi(Build.VERSION_CODES.S)
+@SuppressLint("UnrememberedMutableState", "DefaultLocale")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
@@ -55,11 +68,21 @@ fun EditProfileScreen(
 
     var showImageSourceDialog by remember { mutableStateOf(false) }
 
+    var favoriteTime by remember { mutableStateOf("") }
+    var favoriteTimeError by remember { mutableStateOf<String?>(null) }
+
+    val timeRegex = Regex("""^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$""")
+
     LaunchedEffect(profileState) {
         name = profileState.fullName
         job = profileState.jobTitle
         avatarUri = profileState.avatarUri
         resumeUrl = profileState.resumeUri
+        favoriteTime = profileState.favoritePairTime
+    }
+
+    val isFormValid by derivedStateOf {
+        name.isNotBlank() && (favoriteTime.isEmpty() || favoriteTime.matches(timeRegex))
     }
 
     val pickFromGalleryLauncher = rememberLauncherForActivityResult(
@@ -103,6 +126,7 @@ fun EditProfileScreen(
             PackageManager.PERMISSION_GRANTED -> takePictureLauncher.launch(photoUri)
             else -> cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
+        showImageSourceDialog = false
     }
 
     fun checkGalleryPermissionAndLaunch(){
@@ -115,6 +139,7 @@ fun EditProfileScreen(
             PackageManager.PERMISSION_GRANTED -> pickFromGalleryLauncher.launch("image/*")
             else -> galleryPermissionLauncher.launch(permission)
         }
+        showImageSourceDialog = false
     }
 
     Scaffold(
@@ -127,19 +152,27 @@ fun EditProfileScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        scope.launch {
-                            repository.saveProfile(
-                                ProfileData(
-                                    fullName = name,
-                                    jobTitle = job,
-                                    avatarUri = avatarUri,
-                                    resumeUri = resumeUrl
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                repository.saveProfile(
+                                    ProfileData(
+                                        fullName = name,
+                                        jobTitle = job,
+                                        avatarUri = avatarUri,
+                                        resumeUri = resumeUrl,
+                                        favoritePairTime = favoriteTime.takeIf { it.matches(timeRegex) } ?: ""
+                                    )
                                 )
-                            )
-                            navController.popBackStack()
-                        }
-                    }) {
+                                cancelFavoritePairAlarm(context)
+                                if (favoriteTime.matches(timeRegex)) {
+                                    scheduleFavoritePairNotification(context, favoriteTime, name)
+                                }
+                                navController.popBackStack()
+                            }
+                        },
+                        enabled = isFormValid
+                    ) {
                         Icon(Icons.Default.Check, contentDescription = "Сохранить")
                     }
                 }
@@ -207,7 +240,41 @@ fun EditProfileScreen(
                 label = { Text("Ссылка на PDF-резюме") },
                 modifier = Modifier.fillMaxWidth()
             )
+            Spacer(modifier = Modifier.height(16.dp))
 
+            OutlinedTextField(
+                value = favoriteTime,
+                onValueChange = { newValue ->
+                    favoriteTime = newValue
+                    favoriteTimeError = when {
+                        newValue.isEmpty() -> null
+                        newValue.matches(timeRegex) -> null
+                        else -> "Введите время в формате ЧЧ:ММ"
+                    }
+                },
+                label = { Text("Время любимой пары") },
+                placeholder = { Text("14:30") },
+                isError = favoriteTimeError != null,
+                supportingText = favoriteTimeError?.let { { Text(it) } },
+                trailingIcon = {
+                    IconButton(onClick = {
+                        val cal = Calendar.getInstance()
+                        TimePickerDialog(
+                            context,
+                            { _, hour, minute ->
+                                favoriteTime = String.format("%02d:%02d", hour, minute)
+                                favoriteTimeError = null
+                            },
+                            cal.get(Calendar.HOUR_OF_DAY),
+                            cal.get(Calendar.MINUTE),
+                            true
+                        ).show()
+                    }) {
+                        Icon(Icons.Default.Notifications, contentDescription = "Выбрать время")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
             if (resumeUrl.isNotEmpty()) {
                 TextButton(
                     onClick = {
@@ -227,18 +294,16 @@ fun EditProfileScreen(
 
     if (showImageSourceDialog) {
         AlertDialog(
-            onDismissRequest = { showImageSourceDialog = false },
+            onDismissRequest = { },
             title = { Text("Выбрать фото") },
             text = { Text("Откуда загрузить изображение?") },
             confirmButton = {
                 Column {
                     TextButton(onClick = {
-                        showImageSourceDialog = false
                         checkCameraPermissionAndLaunch()
                     }) { Text("Сделать фото") }
 
                     TextButton(onClick = {
-                        showImageSourceDialog = false
                         checkGalleryPermissionAndLaunch()
                     }) { Text("Выбрать из галереи") }
                 }
@@ -257,3 +322,54 @@ suspend fun saveImageToInternalStorage(context: Context, uri: Uri): Uri =
         outputStream.close()
         Uri.fromFile(file)
     }
+
+@RequiresApi(Build.VERSION_CODES.S)
+@SuppressLint("ServiceCast")
+private fun scheduleFavoritePairNotification(context: Context, time: String, name: String) {
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    val intent = Intent(context, NotificationReceiver::class.java).apply {
+        putExtra("name", name.ifBlank { "Друг" })
+    }
+    val pendingIntent = PendingIntent.getBroadcast(
+        context, 1001, intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    val (hour, minute) = time.split(":").map { it.toInt() }
+    val calendar = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, hour)
+        set(Calendar.MINUTE, minute)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+        if (before(Calendar.getInstance())) add(Calendar.DAY_OF_YEAR, 1)
+    }
+
+    if (!alarmManager.canScheduleExactAlarms()) {
+        alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+    } else {
+        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+    }
+
+    createNotificationChannel(context)
+}
+
+private fun cancelFavoritePairAlarm(context: Context) {
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    val intent = Intent(context, NotificationReceiver::class.java)
+    val pendingIntent = PendingIntent.getBroadcast(
+        context, 1001, intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    alarmManager.cancel(pendingIntent)
+}
+
+private fun createNotificationChannel(context: Context) {
+    val channel = NotificationChannel(
+        "favorite_pair_channel",
+        "Любимая пара",
+        NotificationManager.IMPORTANCE_HIGH
+    ).apply {
+        description = "Уведомления о начале любимой пары"
+    }
+    context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+}
